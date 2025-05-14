@@ -4,7 +4,8 @@
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Калькулятор сложения");
+            ILogger logger = new Logger();
+            ICalculator calculator = new Calculator(logger);
 
             double x = 0;
             double y = 0;
@@ -23,37 +24,63 @@
                 }
                 catch (FormatException)
                 {
-                    Console.WriteLine("Ошибка: Введено не число. Попробуйте снова.\n");
+                    logger.LogError("Введено не число. Попробуйте снова.");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Произошла ошибка: " + ex.Message);
+                    logger.LogError("Произошла ошибка: " + ex.Message);
                 }
             }
             
-            Calculator calculator = new Calculator(x, y);
-            Console.WriteLine($"{x} + {y} = {calculator.Add()}");
+            Console.WriteLine($"Результат: {x} + {y} = {calculator.Add(x, y)}");
+            logger.LogEvent("Программа завершена");
         }
     }
 
-    public interface IAddition
+    public interface ICalculator
     {
-        double Add();
+        double Add(double FirstNumber, double SecondNumber);
     }
 
-    public class Calculator : IAddition
+    public class Calculator : ICalculator
     {
+        private readonly ILogger _logger;
         public double FirstNumber { get; set; }
         public double SecondNumber { get; set; }
-        public Calculator(double firstNumber, double secondNumber)
+        public Calculator(ILogger logger)
         {
-            FirstNumber = firstNumber;
-            SecondNumber = secondNumber;
+            _logger = logger;
+            _logger.LogEvent("Калькулятор запущен");
         }
 
-        public double Add() 
+        public double Add(double FirstNumber, double SecondNumber) 
         {
-            return FirstNumber + SecondNumber;
+            _logger.LogEvent($"Выполняется сложение: {FirstNumber} + {SecondNumber}");
+            double result = FirstNumber + SecondNumber;
+            _logger.LogEvent($"Результат сложения: {result}");
+            return result;
         }
+    }
+}
+
+public interface ILogger
+{
+    void LogEvent(string message);
+    void LogError(string message);
+}
+
+public class Logger : ILogger
+{
+    public void LogEvent(string message)
+    {
+        Console.ForegroundColor = ConsoleColor.Blue;
+        Console.WriteLine($"[СОБЫТИЕ] {DateTime.Now}: {message}");
+        Console.ResetColor();
+    }
+    public void LogError(string message)
+    {
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine($"[ОШИБКА] {DateTime.Now}: {message}");
+        Console.ResetColor();
     }
 }
